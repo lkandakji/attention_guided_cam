@@ -1,29 +1,50 @@
 # Attention Guided CAM: Visual Explanations of Vision Transformer Guided by Self-Attention
-This is a Pytorch implementation of the Attention Guided CAM submitted to AAAI 2024.
 
-## Description of Our Method
-Our AGCAM provides a high-level semantic explanation with a great localization performanace of the Vision Transformer (ViT) model proposed in https://arxiv.org/abs/2010.11929.
-We introduces a gradient-based analysis of the ViT model guided by the self-attention information intrinsically produced by ViT and this provides a visual explanation with great weakly-supervised object localization performance.
+This repo contains code for a mechanistic study of how ViTs localize and represent visual evidence. The project implements Attention-Guided CAM (AGCAM) and compares it against other explanation methods for ViTs, including Attention Rollout and LRP-based approaches. Rather than treating visual explanations as purely post-hoc artifacts, this work examines how self-attention structure interacts with gradient-based signals to produce localized evidence maps, and how these mechanisms behave across different inputs.
+
+This code was originally developed as part of a research study and is presented here as a reproducible framework for probing internal representations of ViTs.
+
+## Research Motivation
+
+ViTs often achieve strong aggregate performance while relying on distributed, non-local representations that are difficult to interpret. In weak-signal or weakly supervised regimes, this can lead to explanations that appear confident but are poorly grounded in relevant visual evidence.
+
+This project investigates:
+* how self-attention influences gradient-based explanations,
+* whether attention-guided methods improve localization consistency,
+* and where explanation methods break down despite strong classification accuracy.
+
+## Method Overview
+AGCAM performs a gradient-based analysis of ViT models that is explicitly guided by the model’s self-attention structure. By incorporating attention information directly into the explanation pipeline, the method aims to align saliency maps with the internal decision pathways of the model rather than treating attention and gradients independently.
+
+We evaluate AGCAM alongside:
+* Attention Rollout (Abnar & Zuidema, 2020), which aggregates attention weights across layers, and
+* LRP-based ViT explanations (Chefer et al., 2021), which propagate relevance scores through the transformer architecture.
+
+## Experimental Setup
+Experiments are conducted on the ImageNet ILSVRC 2012 validation set using pretrained Vision Transformer models released via the timm library, which can be downloaded from https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_base_p16_224-80ecf9dd.pth. While the models themselves are not trained as part of this work, the focus is on internal behavior and explanation quality, not task optimization. For the quantitative evalution (ABPC and localiztion performance test), you need the validation set of ImageNet ILSVRC 2012 and should provide the root folder of the dataset as an argument.
+
+We evaluate explanation methods using:
+* pixel accuracy, IoU, Dice coefficient, precision, and recall (for localization)
+*  Area Between Perturbation Curves (ABPC) to measure explanation faithfulness under systematic input perturbation
+
+Across methods, the evaluation framework surfaces several recurring failure patterns:
+* explanations that collapse to high-frequency textures,
+* attention maps that diffuse across irrelevant regions,
+* and saliency maps that remain stable under perturbation despite changes in model confidence.
 
 ## Example Code Configurations
-1. We provide examples of our method applied in the images of the dataset of ImageNet ILSVRC 2012 (https://www.image-net.org/challenges/LSVRC/2012/). 
 Due to the restriction on the size of the submission file, a small subset of the dataset is selected as the sample images for the visualization example. 
-Note that the model parameter of ViT trained to this dataset is **NOT** from our work but released by Timm, which can be downloaded from https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_base_p16_224-80ecf9dd.pth.
 
-2. For the quantitative evalution (ABPC and localiztion performance test), you need the validation set of ImageNet ILSVRC 2012 and should provide the root folder of the dataset as an argument.
-
-3. This submitted zip file contains the following contents:
+This submitted zip file contains the following contents:
 * The implementation code of our method.
 * The ViT model implementation provided by Timm library adapted to our method. 
 * The implementation code of Attention Rollout whose method was introduced in https://arxiv.org/abs/2005.00928, provided by https://github.com/jacobgil/vit-explain
 * The implementation code of LRP-based method devised for Vision Transformer whose method was introduced in https://arxiv.org/abs/2012.09838, provided by https://github.com/hila-chefer/Transformer-Explainability.
 * The sample code for calculating the localization performance with the metrics shown in our paper (pixel accuracy, IoU, dice coefficient, recall and precision scores).
-* The sample code for calculating the ABPC (Area Between Perturbation Curves) score shown in our paper. 
+* The sample code for calculating the ABPC (Area Between Perturbation Curves) score. 
 * The sample notebook for generating visual explanation and the class-specific visual explanation.
 * The sample images.
-* A README.md file (this)
 * A requirements.txt file
-
 
 # To set the environment,
 ```
@@ -59,8 +80,6 @@ All the metrics used in our paper will be printed, including
 
 The threshold for creating bounding boxes is set to 0.5 by default, but you can choose any number form 0.0 to 1.0 as threshold by using `--threshold` argument.
 
-
-
 ### To measure the ABPC score,
 ```
 python save_h5.py --method=agcam  --save_root=.\saveroot --data_root=.\ILSVRC
@@ -89,8 +108,6 @@ You can choose the method to evaluate same as above.
 Note that you need to provide the path where the hdf5 file is located. You can provide the path that you have provided in `--save_root` when running save_h5.py file.
 It can produce a csv file that shows the ABPC score of all images by `--csv` and save the average result in a txt file by `--file` argument.
 These two result files will be generated in the folder where your hdf5 file was located.
-
-
 
 ### A notebook of the visual explanation and the class-specific visual explanation provided by our method
 
